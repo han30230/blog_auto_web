@@ -13,7 +13,10 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "prisma studio",
     "test": "jest --passWithNoTests",
-    "test:local": "tsx scripts/test-local.ts"
+    "test:local": "tsx scripts/test-local.ts",
+    "crawl:adsensefarm:sniff": "tsx scripts/adsensefarm-realtime.ts sniff",
+    "crawl:adsensefarm:once": "tsx scripts/adsensefarm-realtime.ts once",
+    "crawl:adsensefarm:loop": "tsx scripts/adsensefarm-realtime.ts loop"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -21,12 +24,12 @@
     "bullmq": "^5.34.0",
     "fast-xml-parser": "^4.5.3",
     "google-trends-api": "^4.9.2",
+    "ioredis": "^5.4.1",
     "next": "14.2.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.3",
-    "zod": "^3.23.8",
-    "ioredis": "^5.4.1"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
@@ -38,6 +41,7 @@
     "eslint-config-next": "14.2.18",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "playwright": "^1.58.2",
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.15",

@@ -20,3 +20,6 @@ prisma/migrations/**/migration_lock.toml
 .DS_Store
 coverage
 .vercel
+
+# local crawler/cache outputs
+.cache

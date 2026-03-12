@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/", label: "트렌드" },
   { href: "/realtime", label: "실시간 검색어" },
+  { href: "/trends", label: "트렌드" },
   { href: "/blog", label: "블로그" },
   { href: "/youtube", label: "유튜브" },
   { href: "/neighbors", label: "서이추" },
@@ -17,7 +17,10 @@ export function TopNav() {
   return (
     <nav className="flex flex-wrap items-center justify-end gap-2">
       {navItems.map((it) => {
-        const active = it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
+        const active =
+          it.href === "/realtime"
+            ? pathname === "/realtime" || pathname === "/"
+            : pathname.startsWith(it.href);
         return (
           <Link
             key={it.href}

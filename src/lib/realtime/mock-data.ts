@@ -68,6 +68,12 @@ export function getMockSection(
   title: string,
   logoPath: string
 ): { items: RealtimeKeywordItem[]; updatedAt: string } {
+  // In production (e.g. Vercel), showing placeholder "실시간1/2/3" is misleading.
+  // Only return mock keywords when USE_MOCK_REALTIME is explicitly enabled.
+  const allowMock = process.env.USE_MOCK_REALTIME === "true";
+  if (!allowMock && process.env.NODE_ENV === "production") {
+    return { items: [], updatedAt: new Date().toISOString() };
+  }
   const items = MOCK_KEYWORDS[source].slice(0, 10);
   return {
     items,
@@ -76,5 +82,7 @@ export function getMockSection(
 }
 
 export function getMockItems(source: RealtimeSource): RealtimeKeywordItem[] {
+  const allowMock = process.env.USE_MOCK_REALTIME === "true";
+  if (!allowMock && process.env.NODE_ENV === "production") return [];
   return MOCK_KEYWORDS[source].slice(0, 10);
 }

@@ -82,13 +82,24 @@ function extractUrlHintsFromJs(js: string) {
   // Note: we keep this intentionally broad; we'll manually pick the right one from output if needed.
   const hits = new Set<string>();
 
+  function addAll(re: RegExp) {
+    // Avoid String#matchAll to keep TS target compatibility in CI builds.
+    const r = new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`);
+    let m: RegExpExecArray | null;
+    while ((m = r.exec(js)) !== null) {
+      hits.add(m[0]);
+      // Safety: avoid infinite loops on zero-length matches
+      if (m[0].length === 0) r.lastIndex++;
+    }
+  }
+
   // absolute URLs
-  for (const m of js.matchAll(/https?:\/\/[^\s"'`<>]+/g)) hits.add(m[0]);
+  addAll(/https?:\/\/[^\s"'`<>]+/g);
   // root-relative paths with common endpoint-ish patterns
-  for (const m of js.matchAll(/\/[a-zA-Z0-9][a-zA-Z0-9\-_/]*\.(?:json|php|txt)(?:\?[^\s"'`<>]*)?/g)) hits.add(m[0]);
-  for (const m of js.matchAll(/\/wp-json\/[a-zA-Z0-9\-_/]+(?:\?[^\s"'`<>]*)?/g)) hits.add(m[0]);
-  for (const m of js.matchAll(/\/api\/[a-zA-Z0-9\-_/]+(?:\?[^\s"'`<>]*)?/g)) hits.add(m[0]);
-  for (const m of js.matchAll(/\/realtime[^\s"'`<>]*/g)) hits.add(m[0]);
+  addAll(/\/[a-zA-Z0-9][a-zA-Z0-9\-_/]*\.(?:json|php|txt)(?:\?[^\s"'`<>]*)?/g);
+  addAll(/\/wp-json\/[a-zA-Z0-9\-_/]+(?:\?[^\s"'`<>]*)?/g);
+  addAll(/\/api\/[a-zA-Z0-9\-_/]+(?:\?[^\s"'`<>]*)?/g);
+  addAll(/\/realtime[^\s"'`<>]*/g);
 
   return Array.from(hits).slice(0, 200);
 }
@@ -160,9 +171,9 @@ async function newKoreanLikeContext() {
   });
   const context = await browser.newContext({
     locale: "ko-KR",
-    user_agent:
+    userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    extra_http_headers: {
+    extraHTTPHeaders: {
       "Accept-Language": "ko-KR,ko;q=0.9",
       Referer: "https://adsensefarm.kr/",
     },
@@ -421,7 +432,8 @@ function diffByPortalRank(prev: RealtimeItem[], cur: RealtimeItem[]) {
   const cm = new Map(cur.map((x) => [key(x), x]));
 
   const changes: unknown[] = [];
-  for (const [k, c] of cm.entries()) {
+  // Avoid iterating MapIterator directly for TS downlevel compatibility in CI.
+  for (const [k, c] of Array.from(cm.entries())) {
     const p = pm.get(k);
     if (!p) changes.push({ type: "new", item: c });
     else if (p.keyword !== c.keyword || (p.change ?? "") !== (c.change ?? "")) changes.push({ type: "updated", before: p, after: c });

@@ -9,19 +9,16 @@ import { join } from "node:path";
 const CRAWL_URL = "https://adsensefarm.kr/realtime/";
 const FETCH_TIMEOUT_MS = 15_000;
 
-const SOURCE_ORDER: RealtimeSource[] = [
-  "google",
-  "zum",
-  "nate",
-  "googletrend",
-];
-const SECTION_TITLES: Record<RealtimeSource, string> = {
+const SOURCE_ORDER = ["google", "zum", "nate", "googletrend"] as const;
+type ActiveSource = (typeof SOURCE_ORDER)[number];
+
+const SECTION_TITLES: Record<ActiveSource, string> = {
   google: "구글 실시간 검색어",
   zum: "줌 실시간 검색어",
   nate: "네이트 실시간 검색어",
   googletrend: "구글트렌드 실시간 검색어",
 };
-const LOGO_PATHS: Record<RealtimeSource, string> = {
+const LOGO_PATHS: Record<ActiveSource, string> = {
   google: "/images/realtime/google.svg",
   zum: "/images/realtime/zum.svg",
   nate: "/images/realtime/nate.svg",
@@ -50,7 +47,7 @@ function toIsoFromKstTimestamp(ts: string | undefined) {
   return new Date(`${y}-${mo}-${d}T${h}:${mi}:00+09:00`).toISOString();
 }
 
-function searchLink(source: RealtimeSource, keyword: string) {
+function searchLink(source: ActiveSource, keyword: string) {
   const q = encodeURIComponent(keyword);
   if (source === "google") return `https://www.google.com/search?q=${q}`;
   if (source === "zum") return `https://search.zum.com/search.zum?query=${q}`;
@@ -154,7 +151,7 @@ export async function crawlAdsensefarmRealtime(): Promise<RealtimeSectionPayload
             link: searchLink(source, x.keyword),
           }));
         return {
-          source,
+          source: source as RealtimeSource,
           title: SECTION_TITLES[source],
           logoPath: LOGO_PATHS[source],
           items: list,
@@ -195,7 +192,7 @@ export async function crawlAdsensefarmRealtime(): Promise<RealtimeSectionPayload
     const title = SECTION_TITLES[source];
     const logoPath = LOGO_PATHS[source];
     return {
-      source,
+      source: source as RealtimeSource,
       title,
       logoPath,
       items,

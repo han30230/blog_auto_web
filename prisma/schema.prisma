@@ -1,0 +1,119 @@
+// Prisma schema for Keyword Collection/Analysis System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Keyword {
+  id        String   @id @default(cuid())
+  text      String
+  country   String   @default("KR")
+  language  String   @default("ko")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  metrics    KeywordMetric[]
+  opportunityScores KeywordOpportunityScore[]
+  clustersAsParent KeywordCluster[] @relation("ParentKeyword")
+  clustersAsChild  KeywordCluster[] @relation("ChildKeyword")
+
+  @@index([text, country, language])
+  @@map("keyword")
+}
+
+model KeywordMetric {
+  id                        String   @id @default(cuid())
+  keywordId                 String
+  source                    String
+  country                   String   @default("KR")
+  language                  String   @default("ko")
+  collectedAt               DateTime
+  trendScoreRelative        Float?
+  monthlySearchVolume       Int?
+  monthlySearchVolumeMobile Int?
+  monthlySearchVolumePc     Int?
+  monthlyClicks             Int?
+  ctr                       Float?
+  competitionLevel          Float?
+  cpcLow                    Float?
+  cpcHigh                   Float?
+  risingScore               Float?
+  freshnessScore            Float?
+  sourceConfidence          Float?
+  rawPayload                Json?
+  sourceJobId               String?
+
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  sourceJob SourceJob? @relation(fields: [sourceJobId], references: [id])
+
+  @@index([keywordId, source, collectedAt])
+  @@index([source, collectedAt])
+  @@index([sourceJobId])
+  @@map("keyword_metric")
+}
+
+model KeywordSourceSnapshot {
+  id          String   @id @default(cuid())
+  source      String
+  sourceJobId String
+  rawPayload  Json
+  collectedAt DateTime @default(now())
+
+  sourceJob SourceJob @relation(fields: [sourceJobId], references: [id], onDelete: Cascade)
+
+  @@index([sourceJobId])
+  @@index([source, collectedAt])
+  @@map("keyword_source_snapshot")
+}
+
+model SourceJob {
+  id           String    @id @default(cuid())
+  source       String
+  status       String    // pending | running | completed | failed | partial
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+
+  metrics    KeywordMetric[]
+  snapshots  KeywordSourceSnapshot[]
+
+  @@index([source, status])
+  @@index([createdAt])
+  @@map("source_job")
+}
+
+model KeywordCluster {
+  id              String  @id @default(cuid())
+  parentKeywordId String
+  childKeywordId  String
+  relationType    String  // related | question | longtail
+
+  parentKeyword Keyword @relation("ParentKeyword", fields: [parentKeywordId], references: [id], onDelete: Cascade)
+  childKeyword  Keyword @relation("ChildKeyword", fields: [childKeywordId], references: [id], onDelete: Cascade)
+
+  @@unique([parentKeywordId, childKeywordId, relationType])
+  @@index([parentKeywordId, relationType])
+  @@map("keyword_cluster")
+}
+
+model KeywordOpportunityScore {
+  id                      String   @id @default(cuid())
+  keywordId               String
+  snapshotAt              DateTime
+  normalizedVolumeScore   Float
+  normalizedTrendScore    Float
+  normalizedCompetitionInverse Float
+  normalizedGrowthScore   Float
+  finalOpportunityScore   Float
+
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@index([keywordId, snapshotAt])
+  @@index([finalOpportunityScore])
+  @@map("keyword_opportunity_score")
+}
